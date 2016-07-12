@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# gather system data
+uname -nr
+
+# read arguments
+jobnumber=$1
+desturl=$2
+
+# load necessary modules
+source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+module load gsl/1.16 python/2.7 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
+
+# unpack package
+pkgname='hic-3d-osg'
+tar xzf $pkgname.tar.gz
+cd $pkgname
+
+# run the events
+python ./run-ebe.py $jobnumber || exit 1
+
+# transfer results
+# try to be fault-tolerant
+globus() {
+  globus-url-copy \
+    -verbose -create-dest -restart -stall-timeout 30 $@ \
+    Obs$jobnumber.dat $desturl
+}
+
+for i in {1..5}; do
+  globus && break
+  sleep 5 && false
+done || \
+  globus -no-data-channel-authentication -no-third-party-transfers
+
+
+
+

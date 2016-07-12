@@ -1,0 +1,4 @@
+add_library(${LIBRARY_NAME} STATIC cdata.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} ${LIBRARY_NAME} ${HDF5_LIBRARIES} ${Boost_LIBRARIES} ${GSL_LIBRARIES} ${GSLCBLAS_LIBRARIES})
+install(TARGETS ${PROJECT_NAME} DESTINATION ${PROJECT_NAME})

@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if ! voms-proxy-info -exists -hours 10 2> /dev/null; then
+  echo 'create a proxy first'
+  exit 1
+fi
+
+if [[ $# < 1 ]]; then
+  echo "usage: $0 batch_label jobs_per_input_file input_files..."
+  exit 1
+fi
+
+# parse arguments
+label=$1
+
+# gridftp destination for all events in this batch
+desturl="gsiftp://ntheoryfs01.phy.duke.edu/var/phy/project/nukeserv/wk42/OSG-3d-hybrid-data/$label/"
+
+# directory containing this script
+startdir="/home/weiyao-ke/ebe-3d-osg/condor/"
+echo $startdir
+# create a "scratch" directory for all the condor files
+scratchdir="/local-scratch/weiyao-ke/condor/$label/"
+mkdir -p $scratchdir
+
+# Create a condor submit description file.  This is the "template" job file for
+# every job in this batch with several $(...) variables to be set by the dag.
+cat > $scratchdir/job <<EOF
+universe = vanilla
+x509userproxy = /tmp/x509up_u$(id --user)
++ProjectName = "Duke-QGP"
+
+request_memory = 3G
+request_disk = 5G
+# requirements = (OpSysMajorVer >= 6) && (CVMFS_oasis_opensciencegrid_org_REVISION >= 4288)
+# rank = KFlops
+requirements = (OSGVO_OS_STRING == "RHEL 6") && (CVMFS_oasis_opensciencegrid_org_REVISION >= 5013)
+
+should_transfer_files = YES
+WhenToTransferOutput = ON_EXIT
+
+executable = $startdir/job-control
+arguments = \$(Process) $desturl
+
+transfer_input_files = $startdir/../hic-3d-osg.tar.gz
+transfer_output_files = ./hic-3d-osg/plist\$(Process).hdf5, ./hic-3d-osg/Obs\$(Process).dat
+
+output = $scratchdir/\$(Process).out
+error = $scratchdir/\$(Process).err
+log = $scratchdir/\$(Process).log
+
+# periodic_release = (HoldReasonCode =?= 16)
+# periodic_remove = (HoldReasonCode =?= 1) && (NumJobStarts >= 6)
+
+queue 1000
+EOF
+
+pushd $scratchdir
+condor_submit job
+popd
