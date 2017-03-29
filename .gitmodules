@@ -7,3 +7,6 @@
 [submodule "models/trento"]
 	path = models/trento
 	url = https://github.com/keweiyao/trento.git
+[submodule "models/urqmd-afterburner"]
+	path = models/urqmd-afterburner
+	url = https://github.com/jbernhard/urqmd-afterburner.git
