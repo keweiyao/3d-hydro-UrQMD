@@ -4,3 +4,6 @@
 [submodule "models/frzout"]
 	path = models/frzout
 	url = https://github.com/jbernhard/frzout.git
+[submodule "models/trento"]
+	path = models/trento
+	url = https://github.com/keweiyao/trento.git
