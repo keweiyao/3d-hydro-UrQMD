@@ -1,3 +1,6 @@
 [submodule "models/vhlle-osg"]
 	path = models/vhlle-osg
 	url = https://github.com/keweiyao/vhlle-osg.git
+[submodule "models/frzout"]
+	path = models/frzout
+	url = https://github.com/jbernhard/frzout.git
