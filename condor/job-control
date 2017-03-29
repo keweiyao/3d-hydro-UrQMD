@@ -4,27 +4,34 @@
 uname -nr
 
 # read arguments
-jobnumber=$1
-desturl=$2
+configfile=$1
+icfile=$2
+jobnumber=$3
+desturl=$4
 
 # load necessary modules
 source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
-module load gsl/1.16 python/2.7 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
+module load gsl/1.16 python/3.4 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
 
 # unpack package
-pkgname='hic-3d-osg'
+pkgname='hic-3d-osg-cut'
 tar xzf $pkgname.tar.gz
+cp $configfile $pkgname
+cp $icfile $pkgname
 cd $pkgname
 
 # run the events
-python ./run-ebe.py $jobnumber || exit 1
+python ./run.py $configfile $icfile $jobnumber || exit 1
 
 # transfer results
 # try to be fault-tolerant
 globus() {
+  #globus-url-copy \
+  #  -verbose -create-dest -restart -stall-timeout 30 $@ \
+  #  final-particles-$jobnumber.hdf5 $desturl
   globus-url-copy \
     -verbose -create-dest -restart -stall-timeout 30 $@ \
-    Obs$jobnumber.dat $desturl
+    dndy-$jobnumber.hdf5 $desturl
 }
 
 for i in {1..5}; do

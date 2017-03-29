@@ -33,7 +33,7 @@ if [[ $(hostname) == 'xd-login.opensciencegrid.org' ]]; then
   export LDFLAGS="-L${LIBRARY_PATH//:/ -L}"
 fi
 
-pkgname='hic-3d-osg'
+pkgname='hic-3d-osg-cut'
 
 # create a temporary directory for installing files
 installdir=$(mktemp --directory)
@@ -67,7 +67,7 @@ for i in models/*/; do
 done
 
 # install the event runner script
-cp -v models/run-ebe.py $installdir/$pkgname
+cp -v models/run.py models/preprocessing.py models/calc_dndy.py $installdir/$pkgname
 
 # create tgz for distributing to each job
 tar --verbose --create --gzip --file $pkgname.tar.gz  --directory $installdir $pkgname

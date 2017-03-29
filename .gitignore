@@ -1,7 +1,3 @@
 TEST
-re-analysis
-draft
 models/*/build
-*/*~
-*/*/*~
-*/*/*/*~
+inputs*/

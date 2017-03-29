@@ -14,17 +14,17 @@ Eos_hotqcd::Eos_hotqcd()
   stab.clear();
   ttab.clear();
   ifstream filein("eos/hotqcd.dat");
-    while(!filein.eof())
-      {
+  while(!filein.eof())
+    {
 	filein >> e >> p >> s >> t;
 	etab.push_back(e);
 	ptab.push_back(p);
 	stab.push_back(s);
 	ttab.push_back(t);
-      }
-	loge_min = log(etab[0]);
-	dloge = log(etab[1]) - log(etab[0]);
-	cout << "log(e) min = " << loge_min << ", dlog(e) = " << dloge << endl;
+    }
+    e_min = etab[0];
+    devene = etab[1] - etab[0];
+    cout << "e_min = " << e_min << ", d-even-e = " << devene << endl;
     cout << "hotqcd eos read done" << endl;
 }
 
@@ -39,12 +39,12 @@ void Eos_hotqcd::eos(double e, double nb, double nq, double ns,
   mub = 0.0;
   muq = 0.0;
   mus = 0.0;
-	int index_e = 0;
-	if(e>0) index_e = int((log_fast_ankerl(e) - loge_min)/dloge);
-  if(index_e < 0)
+  int index_e = 0;
+  if(e>e_min) index_e = floor((e - e_min)/devene);
+  if(e<=e_min)
     {
-      T = 0;
-      p = 0;
+      T = ttab[0];
+      p = ptab[0];
       return;
     }
   if(index_e > etab.size()-2)
@@ -65,10 +65,10 @@ void Eos_hotqcd::eos(double e, double nb, double nq, double ns,
 double Eos_hotqcd::p(double e, double nb, double nq, double ns)
 { 
   int index_e = 0;
-	if(e>0) index_e = int((log_fast_ankerl(e) - loge_min)/dloge);
-  if(index_e < 0)
+  if(e>e_min) index_e = floor((e - e_min)/devene);
+  if(e <= e_min)
     {
-      return 0.0;
+      return ptab[0];
     }
   if(index_e > etab.size()-2)
     {
@@ -109,7 +109,7 @@ void Eos_hotqcd::gete(double s, double& e, double nb)
 
 double Eos_hotqcd::cs2(double e)
 {
-  double cs2 =  ( p(e*1.02, 0.0, 0.0, 0.0) - p(e*0.98, 0.0, 0.0, 0.0) ) / (0.04*e);
+  double cs2 =  ( p(e - devene, 0.0, 0.0, 0.0) - p(e + devene, 0.0, 0.0, 0.0) ) / (2.0*devene);
   return cs2;
 }
 

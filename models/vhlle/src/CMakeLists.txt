@@ -1,7 +1,7 @@
 # Compile everything except the main source file into a static lib to be linked
 # to both the main executable and the tests.
 add_library(${LIBRARY_NAME} STATIC
-fast.cpp  cll.cpp eos.cpp eos_hotqcd.cpp trancoeff.cpp fld.cpp hdo.cpp  main.cpp mcgstream.cpp rmn.cpp cornelius.cpp 
+fast.cpp  cll.cpp eos.cpp eos_hotqcd.cpp trancoeff.cpp fld.cpp hdo.cpp  main.cpp IC_reader.cpp rmn.cpp cornelius.cpp 
 )
 
 # Compile the actual executable.

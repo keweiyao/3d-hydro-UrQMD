@@ -4,7 +4,7 @@ class Eos_hotqcd : public EoS
 {
  private:
   std::vector<double> etab, stab, ptab, ttab;
-	double loge_min, dloge;
+	double e_min, devene;
  public:
 	Eos_hotqcd(void);
 	~Eos_hotqcd(void);

@@ -3,6 +3,14 @@
 #include "inc.h"
 #include <iostream>
 
+double Ta = 0.995*0.18, Tb = 1.05*0.18;
+double Tc = 0.154;
+double C1 = 0.03, C2 = 0.001;
+double A0 = -13.45, A1 = 27.55, A2 = -13.77;
+double sigma1 = 0.0025, sigma2 = 0.022, sigma3 = 0.025, sigma4 = 0.13;
+double lambda1 = 0.9, lambda2 = 0.22, lambda3 = 0.9, lambda4 = 0.25;
+
+
 TransportCoeff::TransportCoeff(double _etaS_min, double _etaS_slope_QGP, double _etaS_slope_HRG, double _zetaS, EoS *_eos)
 {
  etaS_min = _etaS_min ;
@@ -14,16 +22,20 @@ TransportCoeff::TransportCoeff(double _etaS_min, double _etaS_slope_QGP, double 
 
 void TransportCoeff::getEta(double e, double T, double &_etaS, double &_zetaS)
 {
-  _zetaS= zetaS*(1. - 3.*eos->cs2(e))/(1. - 3.*eos->cs2(0.8))*std::exp(-pow((T-0.175)/0.01, 2.0));  
-  if (T >= 0.154)
+  //zeta/s
+  //  double x = T/0.18;
+  // if(T<Ta){ _zetaS = zetaS * (C1 + lambda1*exp((x-1)/sigma1) + lambda2*exp((x-1)/sigma2)) ;}
+  //else if(T>Tb){ _zetaS = zetaS * (C2 + lambda3*exp(-(x-1)/sigma3) + lambda4*exp(-(x-1)/sigma4)) ;}
+  //else {_zetaS = zetaS * (A0 + A1*x + A2*x*x) ;}
+  _zetaS = 0.0;  
+  // eta/s
+  if (T >= Tc)
     {
-      _etaS = etaS_min + (T-0.154)*etaS_slope_QGP;
-      return;
+      _etaS = etaS_min + (T-Tc)*etaS_slope_QGP;
     }
-  if (T < 0.154)
+  if (T < Tc)
     {
       _etaS = etaS_slope_HRG ;
-      return;
     }
 
 }

@@ -203,24 +203,24 @@ void Hydro::hlle_flux(Cell *left, Cell *right, int direction, int mode)
 	}
 	if(direction==Z_)
 	{
-	  double tau1 = tauFactor ;
-	  Ftl = U4l*vzl/tau1+pl*vzl/tau1 ;
-	  Fxl = U1l*vzl/tau1 ;
-	  Fyl = U2l*vzl/tau1 ;
-	  Fzl = U3l*vzl/tau1+pl/tau1 ;
+	  double tau1 = tauFactor, vzl_tau1 = vzl/tau1, vzr_tau1 = vzr/tau1;
+	  Ftl = U4l*vzl_tau1+pl*vzl_tau1 ;
+	  Fxl = U1l*vzl_tau1 ;
+	  Fyl = U2l*vzl_tau1 ;
+	  Fzl = U3l*vzl_tau1+pl/tau1 ;
 	  // *** Only for mu != 0 -- Weiyao Ke 
-	  Fbl = Ubl*vzl/tau1 ;
-	  Fql = Uql*vzl/tau1 ;
-	  Fsl = Usl*vzl/tau1 ;
+	  Fbl = Ubl*vzl_tau1 ;
+	  Fql = Uql*vzl_tau1 ;
+	  Fsl = Usl*vzl_tau1 ;
 	  
-	  Ftr = U4r*vzr/tau1+pr*vzr/tau1 ;
-	  Fxr = U1r*vzr/tau1 ;
-	  Fyr = U2r*vzr/tau1 ;
-	  Fzr = U3r*vzr/tau1+pr/tau1 ;
+	  Ftr = U4r*vzr_tau1+pr*vzr_tau1 ;
+	  Fxr = U1r*vzr_tau1 ;
+	  Fyr = U2r*vzr_tau1 ;
+	  Fzr = U3r*vzr_tau1+pr/tau1 ;
 	  // *** Only for mu != 0 -- Weiyao Ke 
-	  Fbr = Ubr*vzr/tau1 ;
-	  Fqr = Uqr*vzr/tau1 ;
-	  Fsr = Usr*vzr/tau1 ;
+	  Fbr = Ubr*vzr_tau1 ;
+	  Fqr = Uqr*vzr_tau1 ;
+	  Fsr = Usr*vzr_tau1 ;
 	  
 	  // for the case of constant c_s only
 	  // factor 1/tau accounts for eta-coordinate
@@ -637,66 +637,70 @@ void Hydro::ISformal()
 	  trcoeff->getTau(T, taupi, tauPi) ;
 	  //#############
 	  // relaxation term, piH,PiH-->half-step
+          double dt_gamma_taupi = dt/2.0/gamma/taupi; double exp_dt_gamma_taupi = exp_fast_schraudolph(-dt_gamma_taupi);
+	  double dt_gamma_tauPi = dt/2.0/gamma/tauPi; double exp_dt_gamma_tauPi = exp_fast_schraudolph(-dt_gamma_tauPi);
 	  for(int i=0; i<4; i++)
 	    for(int j=0; j<=i; j++)
 	    {
 #ifdef FORMAL_SOLUTION
-	      c->setpiH0(i,j, (c->getpi(i,j)-piNS[i][j])* exp_fast_schraudolph(-dt/2.0/gamma/taupi)+piNS[i][j]) ;
+	      c->setpiH0(i,j, (c->getpi(i,j)-piNS[i][j]) * exp_dt_gamma_taupi+piNS[i][j]) ;
 #else
-	      c->setpiH0(i,j, c->getpi(i,j)-(c->getpi(i,j)-piNS[i][j])*dt/2.0/gamma/taupi) ;
+	      c->setpiH0(i,j, c->getpi(i,j)-(c->getpi(i,j)-piNS[i][j])*dt_gamma_taupi) ;
 #endif
 	    }
 #ifdef FORMAL_SOLUTION
-	  c->setPiH0( (c->getPi()-PiNS)* exp_fast_schraudolph(-dt/2.0/gamma/tauPi)+PiNS ) ;
+	  c->setPiH0( (c->getPi()-PiNS)* exp_dt_gamma_tauPi+PiNS ) ;
 #else
-	  c->setPiH0( c->getPi()-(c->getPi()-PiNS)*dt/2.0/gamma/tauPi ) ;
+	  c->setPiH0( c->getPi()-(c->getPi()-PiNS)*dt_gamma_tauPi ) ;
 #endif
 	  // sources from Christoffel symbols from \dot pi_munu
-	  double tau1=tau-dt*0.75 ;
-	  c->addpiH0(0,0, -2.*vz*c->getpi(0,3)/tau1*dt/2. ) ; // *gamma/gamma
-	  c->addpiH0(3,3, -(2.*vz/tau1*c->getpi(0,3))*dt/2. ) ;
-	  c->addpiH0(3,0, -(vz/tau1*c->getpi(0,0) + vz/tau1*c->getpi(3,3))*dt/2. ) ;
-	  c->addpiH0(1,0, -vz/tau1*c->getpi(1,3)*dt/2. ) ;
-	  c->addpiH0(2,0, -vz/tau1*c->getpi(2,3)*dt/2. ) ;
-	  c->addpiH0(3,1, -(vz/tau1*c->getpi(0,1))*dt/2. ) ;
-	  c->addpiH0(3,2, -(vz/tau1*c->getpi(0,2))*dt/2. ) ;
+	  double tau1=tau-dt*0.75 ; double vz_tau1_dt = vz/tau1*dt/2.;
+	  c->addpiH0(0,0, -2.*c->getpi(0,3)*vz_tau1_dt ) ; // *gamma/gamma
+	  c->addpiH0(3,3, -2.*c->getpi(0,3)*vz_tau1_dt ) ;
+	  c->addpiH0(3,0, -(c->getpi(0,0) + c->getpi(3,3))*vz_tau1_dt ) ;
+	  c->addpiH0(1,0, -c->getpi(1,3)*vz_tau1_dt ) ;
+	  c->addpiH0(2,0, -c->getpi(2,3)*vz_tau1_dt ) ;
+	  c->addpiH0(3,1, -c->getpi(0,1)*vz_tau1_dt ) ;
+	  c->addpiH0(3,2, -c->getpi(0,2)*vz_tau1_dt ) ;
 	  // source from full IS equations (see  draft for the description)
-	  double u[4] ;
+	  double u[4] , i_gamma_dt = 1.0/gamma*dt/2.;
 	  u[0] = gamma ; u[1] = u[0]*vx ;
 	  u[2] = u[0]*vy; u[3]=u[0]*vz ;
 	  for(int i=0; i<4; i++)
 	    for(int j=0; j<=i; j++)
 	    {
-	      c->addpiH0(i,j, -4./3.*c->getpi(i,j)*du/gamma*dt/2. ) ;
+	      c->addpiH0(i,j, -4./3.*c->getpi(i,j)*du*i_gamma_dt ) ;
 	      for(int k=0; k<4; k++) // terms to achieve better transverality to u^mu
 		for(int l=0; l<4; l++)
-		  c->addpiH0(i,j,- c->getpi(i,k)*u[j]*u[l]*dmu[l][k]*gmumu[k]/gamma*dt/2. 
-			     - c->getpi(j,k)*u[i]*u[l]*dmu[l][k]*gmumu[k]/gamma*dt/2. ) ;
+		  c->addpiH0(i,j, -(c->getpi(i,k)*u[j] + c->getpi(j,k)*u[i]) *u[l]*dmu[l][k]*gmumu[k]*i_gamma_dt ) ;
 	    }
-	  c->addPiH0( -4./3.*c->getPi()*du/gamma*dt/2. ) ;
+	  c->addPiH0( -4./3.*c->getPi()*du*i_gamma_dt ) ;
 	  // 1) relaxation(piH)+source(piH) terms for full-step
+	  double dt_gamma_taupi_2 = dt/gamma/taupi; double exp_dt_gamma_taupi_2 =  exp_fast_schraudolph(-dt_gamma_taupi_2);
+	  double dt_gamma_tauPi_2 = dt/gamma/tauPi; double exp_dt_gamma_tauPi_2 =  exp_fast_schraudolph(-dt_gamma_tauPi_2);
 	  for(int i=0; i<4; i++)
 	    for(int j=0; j<=i; j++)
 	    {
 #ifdef FORMAL_SOLUTION
-	      c->setpi0(i,j, (c->getpi(i,j)-piNS[i][j])* exp_fast_schraudolph(-dt/gamma/taupi)+piNS[i][j]) ;
+	      c->setpi0(i,j, (c->getpi(i,j)-piNS[i][j])* exp_dt_gamma_taupi_2 + piNS[i][j]) ;
 #else
-	      c->setpi0(i,j, c->getpi(i,j)-(c->getpiH0(i,j)-piNS[i][j])*dt/gamma/taupi) ;
+	      c->setpi0(i,j, c->getpi(i,j)-(c->getpiH0(i,j)-piNS[i][j])*dt_gamma_taupi_2) ;
 #endif
 	    }
 #ifdef FORMAL_SOLUTION
-	  c->setPi0( (c->getPi()-PiNS)* exp_fast_schraudolph(-dt/gamma/tauPi)+PiNS ) ;
+	  c->setPi0( (c->getPi()-PiNS)* exp_dt_gamma_tauPi_2+PiNS ) ;
 #else
-	  c->setPi0( c->getPi()-(c->getPiH0()-PiNS)*dt/gamma/tauPi ) ;
+	  c->setPi0( c->getPi()-(c->getPiH0()-PiNS)*dt_gamma_tauPi_2 ) ;
 #endif
 	  tau1=tau-dt*0.5 ;
-	  c->addpi0(0,0, -2.*vz/tau1*c->getpiH0(0,3)*dt ) ; // *gamma/gamma
-	  c->addpi0(3,3, -(2.*vz/tau1*c->getpiH0(0,3))*dt ) ;
-	  c->addpi0(3,0, -(vz/tau1*c->getpiH0(0,0) + vz/tau1*c->getpiH0(3,3))*dt ) ;
-	  c->addpi0(1,0, -vz/tau1*c->getpiH0(1,3)*dt ) ;
-	  c->addpi0(2,0, -vz/tau1*c->getpiH0(2,3)*dt ) ;
-	  c->addpi0(3,1, -(vz/tau1*c->getpiH0(0,1))*dt ) ;
-	  c->addpi0(3,2, -(vz/tau1*c->getpiH0(0,2))*dt ) ;
+	  double vz_tau1_dt_2 = vz/tau1*dt; 
+	  c->addpi0(0,0, -2.*c->getpiH0(0,3)*vz_tau1_dt_2 ) ; // *gamma/gamma
+	  c->addpi0(3,3, -2.*c->getpiH0(0,3)*vz_tau1_dt_2 ) ;
+	  c->addpi0(3,0, -(c->getpiH0(0,0) + c->getpiH0(3,3))*vz_tau1_dt_2 ) ;
+	  c->addpi0(1,0, -c->getpiH0(1,3)*vz_tau1_dt_2 ) ;
+	  c->addpi0(2,0, -c->getpiH0(2,3)*vz_tau1_dt_2 ) ;
+	  c->addpi0(3,1, -c->getpiH0(0,1)*vz_tau1_dt_2 ) ;
+	  c->addpi0(3,2, -c->getpiH0(0,2)*vz_tau1_dt_2 ) ;
 	  // source from full IS equations (see draft for the description)
 	  for(int i=0; i<4; i++)
 	    for(int j=0; j<=i; j++)
@@ -704,8 +708,7 @@ void Hydro::ISformal()
 	      c->addpi0(i,j, -4./3.*c->getpiH0(i,j)*du/gamma*dt );
 	      for(int k=0; k<4; k++) // terms to achieve better transverality to u^mu
 		for(int l=0; l<4; l++)
-		  c->addpi0(i,j,- c->getpiH0(i,k)*u[j]*u[l]*dmu[l][k]*gmumu[k]/gamma*dt 
-			    - c->getpiH0(j,k)*u[i]*u[l]*dmu[l][k]*gmumu[k]/gamma*dt) ;
+		  c->addpi0(i,j,- (c->getpiH0(i,k)*u[j] + c->getpiH0(j,k)*u[i])*u[l]*dmu[l][k]*gmumu[k]/gamma*dt) ;
 	      //if((ix==38 || ix==62)&&iy==f->getNY()/2&&iz==f->getNZ()/2&&i==0&&j==2){
 	      //	  cout<<setw(5)<<ix<<setw(5)<<i<<setw(5)<<j<<setw(14)<<dpi<<setw(14)<<vx<<setw(14)<<vy<<endl ;
 	      //  }

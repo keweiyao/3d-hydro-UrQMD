@@ -1,5 +1,0 @@
-source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
-module load python/2.7 all-pkgs || exit 1
-
-python calc_obs.py $1
-

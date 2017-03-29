@@ -62,6 +62,8 @@ void transformPV(EoS *eos, double Q[7], double &e, double &p, double &nb, double
  df = (Q[T_] + p) - M*v*dpe ;
  dvold = vh -vl ;
  dv = dvold ;
+ // cout << "dpe " << dpe << " p " << p << " gamma " << gamma << endl;
+
  for(int i=0; i<MAXIT; i++)
  {
     if( (f+df*(vh-v))*(f+df*(vl-v)) >= 0. || fabs(2.*f) > fabs(dvold*df) )
@@ -90,6 +92,7 @@ void transformPV(EoS *eos, double Q[7], double &e, double &p, double &nb, double
     ns = Q[NS_]*gamma ;
     p = eos->p(e, nb, nq, ns) ;
     dpe = eos->cs2(e);
+    //cout << "dpe " << dpe << " p " << p << " gamma " << gamma << endl;
     f = (Q[T_] + p)*v - M ;
     df = (Q[T_] + p) - M*v*dpe ;
   

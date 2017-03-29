@@ -11,19 +11,19 @@ int index44(const int &i, const int &j) ;
 class Cell
 {
 private :
-	double Q[7] ;  // here, Q, Qh, Qprev etc. ~tau*T^{0i}, like Hirano'01
-	double Qh[7] ; // values at (n+1/2) timestep
-	double Qprev [7] ; // values at the end of previous timestep
-	double Qfull [7] ; // full T^{0\mu} with viscous terms, WITHOUT tau factor
-	double pi[10], piH[10], Pi, PiH ;     //viscous, WITHOUT tau factor
-	double pi0[10], piH0[10], Pi0, PiH0 ; //viscous, WITHOUT tau factor
-	double flux[7] ;
+	float Q[7] ;  // here, Q, Qh, Qprev etc. ~tau*T^{0i}, like Hirano'01
+	float Qh[7] ; // values at (n+1/2) timestep
+	float Qprev [7] ; // values at the end of previous timestep
+	float Qfull [7] ; // full T^{0\mu} with viscous terms, WITHOUT tau factor
+	float pi[10], piH[10], Pi, PiH ;     //viscous, WITHOUT tau factor
+	float pi0[10], piH0[10], Pi0, PiH0 ; //viscous, WITHOUT tau factor
+	float flux[7] ;
 	Cell *next [3] ;
 	Cell *prev [3] ;
-	double m [3] ;
-	double dm [3] ;
+	float m [3] ;
+	float dm [3] ;
 	int ix, iy, iz ;
-	double viscCorrCut ; // flag if the viscous corrections are cut for this cell
+	float viscCorrCut ; // flag if the viscous corrections are cut for this cell
 public :
 	Cell() ;
 	~Cell() {} ;
