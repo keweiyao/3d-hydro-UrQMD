@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+from itertools import chain
+import subprocess
+import numpy as np
+import sys
+import h5py
+import frzout
+
+def run_cmd(*args, **kwargs):
+	print(*args, flush=True)
+	subprocess.check_call(
+		list(chain.from_iterable(a.split() for a in args)),
+		**kwargs	
+		)
+
+def read_text_file(filename):
+	"""
+	Read a text file into a nested list of bytes objects,
+	skipping comment lines (#).
+	"""
+	with open(filename, 'rb') as f:
+		return [l.split() for l in f if not l.startswith(b'#')]
+
+
+def main():
+	# parse config file
+	if len(sys.argv) == 3:
+		with open(sys.argv[1], 'r') as f:
+			config = dict((i.strip() for i in l.split('=', maxsplit=1)) for l in f)
+		seed = int(sys.argv[2])
+	else:
+		config = {}
+		seed = -1
+
+	beam_energy = 2760.
+	nevents = 1
+	xy_max = 15.1
+	xy_step = 0.2
+	nxy = int(xy_max*2/xy_step)
+	eta_max = 8.5
+	eta_step = 1.
+	neta = int(eta_max*2/eta_step)
+	initial_file = 'ic.hdf5'
+
+	run_cmd('trento3d Pb Pb', str(nevents), '--random-seed', str(seed), 
+			'--beam-energy {} --xy-max {} --xy-step {}	\
+			--eta-max {} --eta-step {} --output'.format(beam_energy, xy_max, xy_step, eta_max, eta_step), initial_file, config.get('trento_args', ''))
+
+
+	Tswitch = float(config.get('Tswitch', .15))
+	hrg = frzout.HRG(Tswitch, species='urqmd', res_width=True)
+	eswitch = hrg.energy_density()
+
+	# Create vhlle config file
+	stream = """outputdir freezeout
+	icinputfile {}
+	nx {}
+	ny {}
+	nz {}
+	xmax {}
+	ymax {}
+	etamax {}
+	tau0 {}
+	taumax {}
+	dtau {}
+	ic_nxy {}
+	ic_dxy {}
+	ic_neta {}
+	ic_deta {}
+	e_crit {}
+	etas_min {}
+	etas_slope_qgp {}
+	etas_hrg {}
+	zetas {}
+	""".format(initial_file, 
+				160, 160, 20, 
+				16., 16., 10.,
+				0.6, 20., 0.04,
+				nxy, xy_step, neta, eta_step,
+				eswitch, 
+				config.get('etas_min', 0.08), config.get('etas_slope', 0.), 				config.get('etas_hrg', 0.2), config.get('zetas', 0.))
+	with open('./vhlle-config.dat', 'w') as f:
+		f.write(stream)
+	f.close()
+
+	# run hydro
+	run_cmd('vhlle ./vhlle-config.dat')
+if __name__ == "__main__":
+	main()

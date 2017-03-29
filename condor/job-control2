@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# gather system data
+uname -nr
+
+# read arguments
+configfile=$1
+seed=$2
+desturl=$3
+
+# load necessary modules
+#source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+#module load gsl/1.16 python/3.4 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
+
+# unpack package
+pkgname='hic-3d-osg'
+tar xzf $pkgname.tar.gz
+
+# set environment variabes
+prefix="$(pwd)/$pkgname"
+export PATH="$prefix/bin:$PATH"
+export XDG_DATA_HOME="$prefix/share"
+export PYTHONPATH="$(echo $prefix/lib*/python*/site-packages)"
+echo $PYTHONPATH
+# run the events
+run-events $configfile $seed || exit 1
+
+# transfer results
+# try to be fault-tolerant
+globus() {
+  #globus-url-copy \
+  #  -verbose -create-dest -restart -stall-timeout 30 $@ \
+  #  final-particles-$jobnumber.hdf5 $desturl
+  globus-url-copy \
+    -verbose -create-dest -restart -stall-timeout 30 $@ \
+    dndy-$jobnumber.hdf5 $desturl
+}
+
+for i in {1..5}; do
+  globus && break
+  sleep 5 && false
+done || \
+  globus -no-data-channel-authentication -no-third-party-transfers
+
+
+
+

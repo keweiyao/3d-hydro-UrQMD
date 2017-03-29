@@ -15,9 +15,7 @@ using namespace std ;
 
 // program parameters, to be read from file
 int nx, ny, nz;
-double xmin, xmax, 
-       ymin, ymax, 
-       etamin, etamax, 
+double xmax, ymax, etamax, 
        tau0, tauMax, dtau ;
 
 int ic_nxy, ic_neta;
@@ -42,23 +40,19 @@ void readParameters(char *parFile)
 	 else if(strcmp(parName,"nx")==0) nx = atoi(parValue) ;
 	 else if(strcmp(parName,"ny")==0) ny = atoi(parValue) ;
 	 else if(strcmp(parName,"nz")==0) nz = atoi(parValue) ;
-
-	 else if(strcmp(parName,"xmin")==0) xmin = atof(parValue) ;
 	 else if(strcmp(parName,"xmax")==0) xmax = atof(parValue) ;
-	 else if(strcmp(parName,"ymin")==0) ymin = atof(parValue) ;
 	 else if(strcmp(parName,"ymax")==0) ymax = atof(parValue) ;
-	 else if(strcmp(parName,"etamin")==0) etamin = atof(parValue) ;
 	 else if(strcmp(parName,"etamax")==0) etamax = atof(parValue) ;
 	 else if(strcmp(parName,"tau0")==0) tau0 = atof(parValue) ;
 	 else if(strcmp(parName,"taumax")==0) tauMax = atof(parValue) ;
 	 else if(strcmp(parName,"dtau")==0) dtau = atof(parValue) ;
 
 	 else if(strcmp(parName,"ic_nxy")==0) ic_nxy = atoi(parValue) ;
-         else if(strcmp(parName,"ic_neta")==0) ic_neta = atoi(parValue) ;
-         else if(strcmp(parName,"ic_dxy")==0) ic_dxy = atof(parValue) ;
+     else if(strcmp(parName,"ic_neta")==0) ic_neta = atoi(parValue) ;
+     else if(strcmp(parName,"ic_dxy")==0) ic_dxy = atof(parValue) ;
 	 else if(strcmp(parName,"ic_deta")==0) ic_deta = atof(parValue) ;
 
-         else if(strcmp(parName,"e_crit")==0) eCrit = atof(parValue);
+     else if(strcmp(parName,"e_crit")==0) eCrit = atof(parValue);
 	 else if(strcmp(parName,"etas_min")==0) etaS_min = atof(parValue) ;
 	 else if(strcmp(parName,"etas_slope_qgp")==0) etaS_slope_QGP = atof(parValue) ;
 	 else if(strcmp(parName,"etas_hrg")==0) etaS_HRG = atof(parValue) ;
@@ -76,9 +70,9 @@ void printParameters()
   cout << "outputDir = " << outputDir << endl ;
   cout << "icInputFile = " << icInputFile << endl ;
   cout << "hydro grid = " <<  nx << " x " << ny << " x " << nz << endl ;
-  cout << "hydro area = " << "[" << xmin << "," << xmax << "]" << " x " 
-                          << "[" << ymin << "," << ymax << "]" << " x "
-                          << "[" << etamin << "," << etamax << "]" << endl;
+  cout << "hydro area = " << "[" << -xmax << "," << xmax << "]" << " x " 
+                          << "[" << -ymax << "," << ymax << "]" << " x "
+                          << "[" << -etamax << "," << etamax << "]" << endl;
   cout << "hydro time = " << tau0 << " : " << tauMax << " : " << dtau << endl ;
   cout << "ic grid = "    << ic_nxy << " x " << ic_nxy << " x " << ic_neta << endl ;
   cout << "ic cell = "    << ic_dxy << " x " << ic_dxy << " x " << ic_deta << endl ;
@@ -117,7 +111,7 @@ int main(int argc, char **argv)
   trcoeff = new TransportCoeff(etaS_min, etaS_slope_QGP, etaS_HRG, zetaS, eos) ;
   
   // fluid
-  f = new Fluid(eos, trcoeff, nx, ny, nz, xmin, xmax, ymin, ymax, etamin, etamax, dtau, eCrit) ;
+  f = new Fluid(eos, trcoeff, nx, ny, nz, -xmax, xmax, -ymax, ymax, -etamax, etamax, dtau, eCrit) ;
   
   // initilal conditions (read from file)
   IC_reader *ic = new IC_reader(icInputFile, eos, ic_nxy, ic_neta, ic_dxy, ic_deta);

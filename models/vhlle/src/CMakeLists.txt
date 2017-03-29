@@ -9,4 +9,4 @@ set(MAIN main.cpp)
 add_executable(${PROJECT_NAME} ${MAIN})
 target_link_libraries(${PROJECT_NAME} ${LIBRARY_NAME} ${ROOT_LIBS} ${HDF5_LIBRARIES})
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${PROJECT_NAME})
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
