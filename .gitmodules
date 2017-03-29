@@ -1,0 +1,3 @@
+[submodule "models/vhlle-osg"]
+	path = models/vhlle-osg
+	url = https://github.com/keweiyao/vhlle-osg.git
