@@ -27,34 +27,35 @@ def main():
 	if len(sys.argv) == 3:
 		with open(sys.argv[1], 'r') as f:
 			config = dict((i.strip() for i in l.split('=', maxsplit=1)) for l in f)
-		seed = int(sys.argv[2])
+			run_id = int(sys.argv[2])
 	else:
 		config = {}
-		seed = -1
+		run_id = 0
 
 	beam_energy = 2760.
 	nevents = 1
-	xy_max = 15.1
+	xy_max = 16.1
 	xy_step = 0.2
 	nxy = int(xy_max*2/xy_step)
-	eta_max = 8.5
+	eta_max = 10.
 	eta_step = 1.
-	neta = int(eta_max*2/eta_step)
+	neta = int(eta_max*2/eta_step)+1
 	initial_file = 'ic.hdf5'
 
-	run_cmd('trento3d Pb Pb', str(nevents), '--random-seed', str(seed), 
+	run_cmd('trento3d Pb Pb', str(nevents), 
 			'--beam-energy {} --xy-max {} --xy-step {}	\
 			--eta-max {} --eta-step {} --output'.format(beam_energy, xy_max, xy_step, eta_max, eta_step), initial_file, config.get('trento_args', ''))
 
 
-	Tswitch = float(config.get('Tswitch', .15))
+	Tswitch = float(config.get('Tswitch', .154))
 	hrg = frzout.HRG(Tswitch, species='urqmd', res_width=True)
 	eswitch = hrg.energy_density()
-
+	eosfilename = "./hic-3d-osg/share/vhlle/eos.dat"
 	# Create vhlle config file
 	stream = """outputdir freezeout
 	icinputfile {}
-	nx {}
+	eosfile {}
+    nx {}
 	ny {}
 	nz {}
 	xmax {}
@@ -73,9 +74,10 @@ def main():
 	etas_hrg {}
 	zetas {}
 	""".format(initial_file, 
-				160, 160, 20, 
-				16., 16., 10.,
-				0.6, 20., 0.04,
+				eosfilename,
+				51, 51, 16, 
+				12.5, 12.5, 8.,
+				0.6, 40., 0.04,
 				nxy, xy_step, neta, eta_step,
 				eswitch, 
 				config.get('etas_min', 0.08), config.get('etas_slope', 0.), 				config.get('etas_hrg', 0.2), config.get('zetas', 0.))
@@ -85,5 +87,52 @@ def main():
 
 	# run hydro
 	run_cmd('vhlle ./vhlle-config.dat')
+
+    # freezout
+	t,x,y,z, dst, dsx, dsy, dsz, vx, vy, vz	\
+	= np.loadtxt('freezeout/freezeout.dat').T[:11]
+	surface = frzout.Surface(	np.array([t,x,y,z]).T, 
+								np.array([dst, dsx, dsy, dsz]).T, 
+								np.array([vx, vy, vz]).T)
+	
+	minsamples, maxsamples = 1, 10  # reasonable range for nsamples
+	minparts = 10**4  # min number of particles to sample
+	nparts = 0  # for tracking total number of sampled particles
+
+	# sample soft particles and write to file
+	with open('particles_in.dat', 'w') as f:
+		for nsamples in range(1, maxsamples + 1):
+			parts = frzout.sample(surface, hrg)
+			if parts.size == 0:
+				continue
+			nparts += parts.size
+			print('#', parts.size, file=f)
+			for p in parts:
+				print(p['ID'], *chain(p['x'], p['p']), file=f)
+			if nparts >= minparts and nsamples >= minsamples:
+				break
+
+	run_cmd('afterburner particles_in.dat particles_out.dat')
+
+	# preprocess data
+	
+	fres = h5py.File('results.hdf5', 'a')
+	gp = fres.create_group('event_{}'.format(run_id))
+
+	ID, charge, pT, phi, y, eta = np.loadtxt('particles_out.dat').T
+	# cuts:
+	charged = (charge != 0)
+	midrap = (np.abs(eta) < 0.5)
+	cenkey = (np.abs(eta) < 0.8)
+	H, be =np.histogram(eta[charged], range=[-5., 5.], bins=40)
+	dNch_deta = H/(be[1]-be[0])/nsamples
+	ds = gp.create_dataset('dNch_deta', data=dNch_deta)
+	ds.attrs.create('mid_dNch_deta', np.count_nonzero(midrap & charged)/nsamples
+)
+	ds.attrs.create('cen_key', np.count_nonzero(cenkey & charged)/nsamples
+)
+	ds.attrs.create('Npart', h5py.File('ic.hdf5','r')['event_0'].attrs['npart'])
+	fres.close()
+	
 if __name__ == "__main__":
 	main()

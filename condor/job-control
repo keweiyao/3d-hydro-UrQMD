@@ -5,24 +5,31 @@ uname -nr
 
 # read arguments
 configfile=$1
-icfile=$2
-jobnumber=$3
-desturl=$4
+desturl=$2
+
 
 # load necessary modules
-source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
-module load gsl/1.16 python/3.4 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
+#source /cvmfs/oasis.opensciencegrid.org/osg/modules/lmod/current/init/bash
+#module load gsl/1.16 python/3.4 all-pkgs gcc boost root/5.34-32 hdf5 || exit 1
 
 # unpack package
-pkgname='hic-3d-osg-cut'
+pkgname='hic-3d-osg'
 tar xzf $pkgname.tar.gz
-cp $configfile $pkgname
-cp $icfile $pkgname
-cd $pkgname
 
+# set environment variabes
+prefix="$(pwd)/$pkgname"
+export PATH="$prefix/bin:$PATH"
+export XDG_DATA_HOME="$prefix/share"
+export PYTHONPATH="$(echo $prefix/lib*/python*/site-packages)"
+echo $PYTHONPATH
 # run the events
-python ./run.py $configfile $icfile $jobnumber || exit 1
-
+for i in {1..5};
+do
+  if [[ -f ic.hdf5 ]]; then
+    rm ic.hdf5
+  fi
+  run-events $configfile $i || exit 1
+done
 # transfer results
 # try to be fault-tolerant
 globus() {
